@@ -43,7 +43,10 @@ function roundedRect(ctx, x, y, width, height, radius) {
   ctx.fill();
 }
 
+const rms = (arr) => Math.sqrt(arr.map(val => (val * val)).reduce((acum, val) => acum + val) / arr.length);
+
 export {
+  rms,
 	lerp,
   clamp,
   lerpColor,

@@ -18,8 +18,6 @@ module.exports = {
 		alias: {
 			libs: path.resolve(__dirname, 'src/libs'),
 			utils: path.resolve(__dirname, 'src/utils'),
-			'three/loaders': path.join(__dirname, 'node_modules/three/examples/js/loaders'),
-			'three/controls': path.join(__dirname, 'node_modules/three/examples/js/controls'),
 		},
 	},
 	module: {
@@ -147,9 +145,6 @@ module.exports = {
 		],
 	},
 	plugins: [
-		new webpack.ProvidePlugin({
-			'THREE': 'three',
-		}),
 		new ExtractTextPlugin("style.css"),
 		new HtmlWebpackPlugin({
 			template: './src/template.html',
@@ -160,7 +155,6 @@ module.exports = {
 		}),
 		new CopyWebpackPlugin([
       { from: 'src/assets/looop.ico' },
-      { from: 'src/checkpoints', to: 'checkpoints', toType: 'dir'	 },
 		]),
 	],
 };

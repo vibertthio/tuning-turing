@@ -1,15 +1,16 @@
 import React, { Component } from 'react';
+import Tone from 'tone';
 import { render } from 'react-dom';
-import { MusicVAE } from '@magenta/music';
-
+import TWEEN from '@tweenjs/tween.js';
 
 import styles from './index.module.scss';
 import sig from './assets/sig.png';
 import info from './assets/info.png';
 import Sound from './music/sound';
 import Renderer from './renderer/renderer';
-import { presetMelodies } from './music/clips';
-import { questions, getQuestions, checkEnd } from './utils/questions';
+import { rms } from './utils/utils';
+import urls from './utils/m2c_game_audio_path.json';
+
 
 class App extends Component {
   constructor(props) {
@@ -21,8 +22,8 @@ class App extends Component {
       playing: false,
       mouseDown: false,
       dragging: false,
-      loadingModel: true,
-      loadingNextInterpolation: false,
+      loadingSongs: true,
+      loadingProgress: 0,
       rhythmThreshold: 0.6,
       finishedAnswer: false,
       answerCorrect: false,
@@ -34,21 +35,64 @@ class App extends Component {
         height: window.innerHeight,
         ratio: window.devicePixelRatio || 1,
       },
-
       score: 0,
+      level: 0,
     };
 
-    this.sound = new Sound(this),
+    this.nOfQuestion = 3;
+
+    this.TWEEN = TWEEN;
+    this.ans = 0;
     this.canvas = [];
-    this.melodies = [];
+    this.waveforms = [[], []];
     this.bpms = [];
-    this.questionIndex = 0;
-    this.initAns();
+  }
+
+  initSound() {
+    this.sound = new Sound(this);
+    this.resetPlayers();
+  }
+
+  resetPlayers(reset = false) {
+    let { level } = this.state;
+
+    if (!reset) {
+      console.log(`[level]: ${level}`);
+      console.log('retrieving files...');
+    } else {
+      level = 0;
+      console.log(`[level]: ${level}`);
+      console.log('retrieving files...');
+    }
+
+    const onload = () => {
+      const { loadingProgress } = this.state;
+      let loadingSongs = true;
+
+      if (loadingProgress > 0) {
+        console.log('finish retrieving.');
+        loadingSongs = false;
+        this.setWaveforms();
+      }
+
+      this.setState({
+        loadingProgress: loadingProgress + 1,
+        loadingSongs,
+      });
+    };
+
+    this.setState({
+      loadingProgress: 0,
+    });
+
+    this.ans = (Math.random() > 0.5) ? 1 : 0;
+    this.sound.players[this.ans] = new Tone.Player(urls['MTRNNPath'][level], onload).toMaster();
+    this.sound.players[1 - this.ans] = new Tone.Player(urls['HumanCompose'][level], onload).toMaster();
   }
 
   componentDidMount() {
+    this.initSound();
     this.renderer = new Renderer(this, this.canvas);
-    this.initVAE();
     this.addEventListeners();
     requestAnimationFrame(() => { this.update() });
   }
@@ -75,80 +119,29 @@ class App extends Component {
     removeEventListener();
   }
 
-  initVAE() {
-    // const modelCheckPoint = 'https://storage.googleapis.com/magentadata/js/checkpoints/music_vae/mel_2bar_small';
-    const modelCheckPoint = './checkpoints/mel_2bar_small';
-    const n = this.numInterpolations;
-    const vae = new MusicVAE(modelCheckPoint);
+  setWaveforms() {
+    for (let x = 0; x < 2; x += 1) {
+      const n = 64;
+      const bufferData = this.sound.players[x].buffer.getChannelData();
+      const bufferLength = bufferData.length;
+      const blockLength = bufferLength / n;
+      this.waveforms[x] = [];
 
-    this.setMelodies(new Array(n).fill(presetMelodies['Twinkle']));
-    vae.initialize()
-      .then(() => {
-        console.log('initialized!');
-        return vae.interpolate([
-          presetMelodies[this.melodiesName[0]],
-          presetMelodies[this.melodiesName[1]],
-        ], n);
-      })
-      .then((i) => {
-        this.setMelodies(i);
-        this.vae = vae;
-        this.setState({
-          loadingModel: false,
-        });
-        this.sound.triggerSoundEffect(4);
-      });
-  }
-
-  initAns() {
-    const q = JSON.parse(JSON.stringify(getQuestions(this.questionIndex)));
-    console.log(q);
-    this.answers = q.answers.slice(0);
-    this.options = q.options.slice(0);
-    this.numInterpolations = q.numInterpolations;
-    this.melodiesName = q.melodies.slice(0);
-  }
-
-  resetAns(reset = false) {
-    if (!reset) {
-      this.questionIndex += 1;
-    } else {
-      this.questionIndex = 0;
-    }
-    const q = JSON.parse(JSON.stringify(getQuestions(this.questionIndex)));
-
-    this.vae.interpolate([
-      presetMelodies[q.melodies[0]],
-      presetMelodies[q.melodies[1]],
-    ], q.numInterpolations)
-    .then((i) => {
-      // console.log('finish interpolate, set melody');
-      this.initAns();
-      this.setMelodies(i);
-
-      this.setState({
-        loadingNextInterpolation: false,
-      });
-
-      if (this.questionIndex !== 0) {
-        this.sound.triggerSoundEffect(4);
+      for (let i = 0; i < (n - 1); i += 1) {
+        const arr = bufferData.slice(i * blockLength, (i + 1) * blockLength);
+        const amp = Math.pow(rms(arr), 1.2);
+        this.waveforms[x].push(amp);
       }
-    });
-
-    // this.setState({
-    //   loadingNextInterpolation: true,
-    // });
+    }
   }
 
-  setMelodies(ms) {
-    this.renderer.updateMelodies(ms);
-    this.sound.updateMelodies(ms);
-    this.interpolatedMelodies = ms;
-  }
+  resetAns() {}
 
   update() {
-    const { progress } = this.sound.part;
-    this.renderer.draw(this.state.screen, progress);
+    this.TWEEN.update();
+
+    // const { progress } = this.sound.part;
+    this.renderer.draw(this.state.screen);
     requestAnimationFrame(() => { this.update() });
   }
 
@@ -164,20 +157,9 @@ class App extends Component {
 
   handleClick(e) {
     e.stopPropagation();
-    const { slash, dragging } = this.state;
+    const { slash } = this.state;
 
     if (!slash) {
-      const [onAns, onOptions] = this.renderer.handleMouseClick(e);
-      if (!dragging) {
-        if (onAns > -1) {
-          this.sound.changeMelody(onAns);
-          this.start();
-        } else if (onOptions > -1) {
-          this.sound.changeMelody(onOptions);
-          this.start();
-        }
-      }
-
       this.setState({
         dragging: false,
       });
@@ -186,39 +168,33 @@ class App extends Component {
 
   handleMouseDown(e) {
     e.stopPropagation();
-    const { slash, waitingNext } = this.state;
+    const { slash, waitingNext, playing } = this.state;
 
-    if (!slash && !waitingNext) {
-      const [ onAns, onOptions] = this.renderer.handleMouseDown(e);
-      if (onAns > -1) {
-        // this.sound.changeMelody(onAns);
-        // this.start();
+    if (!slash) {
+      const id = this.renderer.handleMouseDown(e);
+      if(id === 0) {
+        this.sound.start(0);
+      } else if (id === 1) {
+        this.sound.start(1);
+      }
+
+      if (id !== -1) {
         this.setState({
-          mouseDown: true,
-        });
-      } else if (onOptions > -1) {
-        // this.sound.changeMelody(onOptions);
-        // this.start();
-        this.setState({
-          mouseDown: true,
+          finishedAnswer: true,
         });
       }
     }
 
+    this.setState({
+      playing: true,
+    });
   }
 
   handleMouseUp(e) {
     e.stopPropagation();
     const { slash, waitingNext } = this.state;
     if (!slash && !waitingNext) {
-      console.log('m up');
-      this.renderer.handleMouseUp(e)
-      const finished = this.checkFinished();
-
-      this.setState({
-        mouseDown: false,
-        finishedAnswer: finished,
-      });
+      this.renderer.handleMouseUp(e);
     }
   }
 
@@ -246,8 +222,8 @@ class App extends Component {
 
   handleKeyDown(event) {
     event.stopPropagation();
-    const { loadingModel } = this.state;
-    if (!loadingModel) {
+    const { loadingSongs } = this.state;
+    if (!loadingSongs) {
       if (event.keyCode === 32) {
         // space
         this.trigger();
@@ -316,31 +292,21 @@ class App extends Component {
   }
 
   checkFinished() {
-    let ret = true;
-    this.answers.forEach(a => {
-      if (a.ans && (a.index === -1)) {
-        ret = false;
-      }
-    });
-    return ret;
+    return (this.renderer.selected !== -1);
   }
 
   checkCorrect() {
-    let ret = true;
-    this.answers.forEach((a, i) => {
-      if (a.index !== i) {
-        ret = false;
-      }
-    });
-    return ret;
+    return (this.renderer.selected === this.ans);
   }
 
-  onClickTheButton() {
+  onClickTheButton(e) {
+    e.stopPropagation();
     if (this.state.waitingNext) {
+      this.sound.stop();
       const result = document.getElementById('resultText');
       result.style.display = 'none';
 
-      if (checkEnd(this.questionIndex)) {
+      if (this.state.level >= this.nOfQuestion) {
         // reset game
         this.sound.triggerSoundEffect(3);
 
@@ -348,8 +314,10 @@ class App extends Component {
         splash.style.display = 'block';
         splash.style.opacity = 1.0;
 
-        this.resetAns(true);
+
+        this.resetPlayers(true);
         this.setState({
+          level: 0,
           restart: true,
           waitingNext: false,
           finishedAnswer: false,
@@ -358,10 +326,11 @@ class App extends Component {
         return;
       }
 
-      this.resetAns();
+      this.renderer.selected = -1;
+      this.resetPlayers();
 
       this.setState({
-        loadingNextInterpolation: true,
+        loadingSongs: true,
         waitingNext: false,
         finishedAnswer: false,
       });
@@ -369,6 +338,11 @@ class App extends Component {
     }
 
     if (this.state.finishedAnswer) {
+
+      const { level } = this.state;
+      console.log('send the answer');
+      this.sound.stop();
+
       const tips = document.getElementById('tips');
       tips.style.display = 'none';
 
@@ -385,6 +359,7 @@ class App extends Component {
       }
 
       this.setState({
+        level: level + 1,
         waitingNext: true,
         answerCorrect: correct,
         score,
@@ -394,19 +369,15 @@ class App extends Component {
     }
   }
 
-  triggerSoundEffect() {
-    this.sound.triggerSoundEffect();
-  }
-
   render() {
-    const { waitingNext, loadingModel, finishedAnswer, answerCorrect, score, loadingNextInterpolation } = this.state;
-    const loadingText = loadingModel ? 'loading...' : 'play';
-    let buttonText = finishedAnswer ? 'send' : 'sorting...';
+    const { level, waitingNext, loadingSongs, finishedAnswer, answerCorrect, score } = this.state;
+    const loadingText = loadingSongs ? 'loading...' : 'play';
+    let buttonText = finishedAnswer ? 'send' : 'choosing...';
 
-    if (loadingNextInterpolation) {
+    if (loadingSongs) {
       buttonText = 'loading ...';
     } else if (waitingNext) {
-      if (!checkEnd(this.questionIndex)) {
+      if (level < this.nOfQuestion) {
         buttonText = 'next';
       } else {
         buttonText = 'end';
@@ -415,8 +386,9 @@ class App extends Component {
 
 
     const resultText = answerCorrect ? 'correct!' : 'wrong!';
-    const scoreText = `${score.toString()}/${(questions.length).toString()}`;
-    const bottomScoreText = `[ score: ${score.toString()}/${(questions.length).toString()} ]`;
+    const resultColor = answerCorrect ? '#6affb0' : '#E00005';
+    const scoreText = `${score.toString()}/${(this.nOfQuestion).toString()}`;
+    const bottomScoreText = `[ score: ${score.toString()}/${(this.nOfQuestion).toString()} ]`;
 
 
     const arr = Array.from(Array(9).keys());
@@ -426,14 +398,14 @@ class App extends Component {
       <div>
         <section className={styles.splash} id="splash">
           <div className={styles.wrapper}>
-            <h1>🎸Sornting</h1>
+            <h1>Quiz</h1>
             <h2>
-              = Sort + Song
+              = 👩‍🎨 Turing Test + 🤖 Harmanization
             </h2>
             <div className="device-supported">
               <p className={styles.description}>
-                A game based on a musical machine learning algorithm which can interpolate different melodies. <br/>
-                The player has to listen to the music to find out the right order, or "sort" the song.
+                A game based on a musical machine learning algorithm which can harmanize the given melodies. <br/>
+                The player has to choose the one generated by the algorithm.
               </p>
 
               <button
@@ -445,7 +417,7 @@ class App extends Component {
               </button>
 
               <p className={styles.builtWith}>
-                Built with tone.js + musicvae.js.
+                Built with tone.js + js canvas.
                 <br />
                 Learn more about <a className={styles.about} target="_blank" href="https://github.com/vibertthio">how it works.</a>
               </p>
@@ -502,7 +474,7 @@ class App extends Component {
         <div className={styles.title}>
           <div className={styles.link}>
             <a href="https://github.com/vibertthio/sornting" target="_blank" rel="noreferrer noopener">
-              Sornting
+              Quiz
             </a>
           </div>
           <button
@@ -515,13 +487,10 @@ class App extends Component {
 
           <div className={styles.tips} id="tips">
             <h3>🙋‍♀️Tips</h3>
-            <p>⚡Drag the <font color="#2ecc71">melodies below</font> <br/>
-              into the <font color="#f39c12">golden box</font> above <br />
-              to complete the interpolation.</p>
-
-            <p>👇Click on the boxes to listen to the melodies.</p>
+            <p>⚡Which one is made by 🤖? Click to listen.<br />
+              👇Press the SEND button to check the answer</p>
           </div>
-          <h1 className={styles.result} id="resultText">{resultText}</h1>
+          <h1 className={styles.result} id="resultText"><font color={resultColor}>{resultText}</font></h1>
 
         </div>
         <div>
@@ -536,7 +505,7 @@ class App extends Component {
           <div className={styles.slider}>
             <button
               className={styles.sendButton}
-              onClick={() => this.onClickTheButton()}
+              onClick={e => this.onClickTheButton(e)}
               onKeyDown={e => e.preventDefault()}
             >
               {buttonText}

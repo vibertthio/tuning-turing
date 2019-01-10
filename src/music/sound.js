@@ -1,6 +1,7 @@
-import Tone, { Transport, Sequence, Part, Event } from 'tone';
+import Tone, { Transport } from 'tone';
 import StartAudioContext from 'startaudiocontext';
 
+import urls from './../utils/m2c_game_audio_path.json';
 import beepSound from './effect/beep.wav';
 import wrongSound from './effect/wrong.wav';
 import correctSound from './effect/correct.wav';
@@ -8,43 +9,9 @@ import endSound from './effect/end.wav';
 import transitionSound from './effect/transition.wav';
 
 export default class Sound {
-  constructor(app) {
-    this.app = app;
+  constructor(app, onload) {
     StartAudioContext(Tone.context);
-    this.currentIndex = 0;
-    this.beat = 0;
-    this.matrix = [];
-    this.melodies = [];
-    this.melodiesIndex = 0;
-    this.chords = [];
-    this.section = [];
-    this.barIndex = 0;
-    this.sectionIndex = 0;
-    this.noteOn = -1;
-    this.loop = false;
-
-    this.comp = new Tone.PolySynth(6, Tone.Synth, {
-      "oscillator": {
-        "partials": [0, 2, 3, 4],
-      }
-    }).toMaster();
-
-    this.synth = new Tone.PolySynth(3, Tone.Synth, {
-      "oscillator": {
-        // "type": "fatsawtooth",
-        "type": "triangle8",
-        // "type": "square",
-        "count": 1,
-        "spread": 30,
-      },
-      "envelope": {
-        "attack": 0.01,
-        "decay": 0.1,
-        "sustain": 0.5,
-        "release": 0.4,
-        "attackCurve": "exponential"
-      },
-    }).toMaster();
+    this.app = app;
 
     this.effects = [];
     this.effects[0] = new Tone.Player(beepSound).toMaster();
@@ -53,55 +20,14 @@ export default class Sound {
     this.effects[3] = new Tone.Player(endSound).toMaster();
     this.effects[4] = new Tone.Player(transitionSound).toMaster();
 
-    this.initTable();
+    this.players = [];
+    this.playersPositions = { '0': 0, '1': 0 };
+    this.tweens = [];
+    // this.players[0] = new Tone.Player(urls['MTRNNPath'][0], onload).toMaster();
+    // this.players[1] = new Tone.Player(urls['HumanCompose'][0], onload).toMaster();
 
     Transport.bpm.value = 150;
-
     Transport.start();
-  }
-
-  initTable() {
-    this.section = new Array(4).fill(new Array(48).fill(new Array(128).fill(0)));
-  }
-
-  updateMelodies(m) {
-    this.melodies = m;
-    const notes = m[this.melodiesIndex].notes.map(note => {
-      const s = note.quantizedStartStep;
-      return {
-        'time': `${Math.floor(s / 16)}:${Math.floor(s / 4) % 4}:${(s % 4)}`,
-        'note': Tone.Frequency(note.pitch, 'midi')
-      };
-    });
-    if (this.part) {
-      this.part.stop();
-    }
-    this.part = new Part((time, value) => {
-      this.synth.triggerAttackRelease(value.note, "8n", time);
-    }, notes);
-
-    this.part.loop = 1;
-    this.part.loopEnd = '2:0:0';
-  }
-
-  changeMelody(i) {
-    this.melodiesIndex = i;
-    const notes = this.melodies[this.melodiesIndex].notes.map(note => {
-      const s = note.quantizedStartStep;
-      return {
-        'time': `${Math.floor(s / 16)}:${Math.floor(s / 4) % 4}:${(s % 4)}`,
-        'note': Tone.Frequency(note.pitch, 'midi')
-      };
-    });
-    if (this.part) {
-      this.part.stop();
-    }
-    this.part = new Part((time, value) => {
-      this.synth.triggerAttackRelease(value.note, "8n", time);
-    }, notes);
-
-    this.part.loop = 1;
-    this.part.loopEnd = '2:0:0';
   }
 
   changeBpm(b) {
@@ -109,32 +35,34 @@ export default class Sound {
   }
 
   stop() {
-
-    this.part.stop();
-    this.synth.releaseAll();
+    this.tweens.forEach(t => t.stop());
+    this.players.forEach(p => p.stop());
+    this.playersPositions = { '0': 0, '1': 0 };
   }
 
-  start() {
-    this.noteOn = -1;
-    this.stop();
-    this.part.start();
-    this.part.stop('+2m');
+  start(id = 0) {
+    const TWEEN = this.app.TWEEN;
+    const time = (this.players[id].buffer.length / 44100) * 1000;
+    const theOtherId = (id === 0) ? 1 : 0;
 
-    if (this.stopEvent) {
-      this.stopEvent.dispose();
-    }
-    this.stopEvent = new Event(time => {
-      this.app.stop();
-    });
-    this.stopEvent.start('+2m');
+    this.players[id].start();
+    this.players[theOtherId].stop();
+    this.playersPositions = { '0': 0, '1': 0 };
+
+    const dest = id === 0 ? { '0': 1 } : { '1': 1 };
+    this.tweens[id] = new TWEEN.Tween(this.playersPositions)
+      .to(dest, time)
+      .onComplete(() => {
+        if (id === 0) {
+          this.playersPositions['0'] = 0;
+        } else {
+          this.playersPositions['1'] = 0;
+        }
+      })
+      .start();
   }
 
   trigger() {
-    if (this.part.state === 'started') {
-      this.stop();
-      return false;
-    }
-    this.start();
     return true;
   }
 
