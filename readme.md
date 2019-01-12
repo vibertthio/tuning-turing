@@ -1,4 +1,6 @@
-# 🎸 Tuning Turing
+# Tuning Turing
+
+#### = 👩‍🎨 Turing Test + 🤖 Melody Harmonization
 
 >  ### [play it](https://vibertthio.com/tuning-turing/)
 
