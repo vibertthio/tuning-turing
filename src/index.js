@@ -398,7 +398,7 @@ class App extends Component {
       <div>
         <section className={styles.splash} id="splash">
           <div className={styles.wrapper}>
-            <h1>Quiz</h1>
+            <h1>Tuning<br/>Turing</h1>
             <h2>
               = 👩‍🎨 Turing Test + 🤖 Harmanization
             </h2>
@@ -474,7 +474,7 @@ class App extends Component {
         <div className={styles.title}>
           <div className={styles.link}>
             <a href="https://github.com/vibertthio/sornting" target="_blank" rel="noreferrer noopener">
-              Quiz
+              Tuning Turing
             </a>
           </div>
           <button
