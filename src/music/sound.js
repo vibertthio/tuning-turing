@@ -10,6 +10,8 @@ import transitionSound from './effect/transition.wav';
 export default class Sound {
   constructor(app, onload) {
     StartAudioContext(Tone.context);
+    this.playing = false;
+    this.currentId = -1;
     this.app = app;
 
     this.effects = [];
@@ -24,16 +26,16 @@ export default class Sound {
     this.playersPositions = { '0': 0, '1': 0 };
     this.tweens = [];
 
-    Transport.bpm.value = 150;
-    Transport.start();
+    // Transport.bpm.value = 150;
+    // Transport.start();
   }
 
   setVolumes() {
-    this.effects[0].volume.value = -10;
-    this.effects[1].volume.value = -10;
-    this.effects[2].volume.value = -10;
-    this.effects[3].volume.value = -10;
-    this.effects[4].volume.value = -10;
+    this.effects[0].volume.value = -13;
+    this.effects[1].volume.value = -13;
+    this.effects[2].volume.value = -13;
+    this.effects[3].volume.value = -13;
+    this.effects[4].volume.value = -13;
   }
 
   changeBpm(b) {
@@ -41,12 +43,44 @@ export default class Sound {
   }
 
   stop() {
+    this.playing = false;
     this.tweens.forEach(t => t.stop());
     this.players.forEach(p => p.stop());
     this.playersPositions = { '0': 0, '1': 0 };
   }
 
+  pause() {
+    this.playing = false;
+    this.tweens.forEach(t => t.stop());
+    this.players.forEach(p => p.stop());
+  }
+
+  resume(pos) {
+    const id = this.currentId;
+
+    if (pos) {
+      this.playersPositions[id] = pos;
+    }
+
+    this.playing = true;
+    const TWEEN = this.app.TWEEN;
+    const time = ((this.players[id].buffer.length / 44100) * 1000) * (this.playersPositions[id]);
+    const timeLeft = ((this.players[id].buffer.length / 44100) * 1000) * (1 - this.playersPositions[id]);
+
+    this.players[id].start(undefined, time / 1000);
+    const dest = id === 0 ? { '0': 1 } : { '1': 1 };
+    this.tweens[id] = new TWEEN.Tween(this.playersPositions)
+      .to(dest, timeLeft)
+      .onComplete(() => {
+        this.playing = false;
+        this.playersPositions[id] = 0;
+      })
+      .start();
+  }
+
   start(id = 0) {
+    this.currentId = id;
+    this.playing = true;
     const TWEEN = this.app.TWEEN;
     const time = (this.players[id].buffer.length / 44100) * 1000;
     const theOtherId = (id === 0) ? 1 : 0;
@@ -59,17 +93,20 @@ export default class Sound {
     this.tweens[id] = new TWEEN.Tween(this.playersPositions)
       .to(dest, time)
       .onComplete(() => {
-        if (id === 0) {
-          this.playersPositions['0'] = 0;
-        } else {
-          this.playersPositions['1'] = 0;
-        }
+        this.playing = false;
+        this.playersPositions[id] = 0;
       })
       .start();
   }
 
   trigger() {
-    return true;
+    if (this.playing) {
+      stop();
+      return false;
+    } else {
+      resume(this.currentId);
+      return true;
+    }
   }
 
   triggerSoundEffect(index = 0) {

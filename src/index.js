@@ -172,16 +172,20 @@ class App extends Component {
   handleMouseDown(e) {
     e.stopPropagation();
     const { slash, waitingNext, playing } = this.state;
+    const hoverPosition = this.renderer.hoverPosition;
 
     if (!slash) {
       const id = this.renderer.handleMouseDown(e);
-      if(id === 0) {
-        this.sound.start(0);
-      } else if (id === 1) {
-        this.sound.start(1);
-      }
-
       if (id !== -1) {
+        if (this.sound.players[id].state === 'started' &&
+            hoverPosition > 0 &&
+            hoverPosition < 1) {
+          this.sound.pause();
+          this.sound.resume(hoverPosition);
+        } else {
+          this.sound.start(id);
+        }
+
         this.setState({
           finishedAnswer: true,
         });
@@ -223,18 +227,18 @@ class App extends Component {
     }
   }
 
-  handleKeyDown(event) {
-    event.stopPropagation();
+  handleKeyDown(e) {
+    e.stopPropagation();
     const { loadingSongs } = this.state;
     if (!loadingSongs) {
-      if (event.keyCode === 32) {
+      if (e.keyCode === 32) {
         // space
         this.trigger();
       }
-      if (event.keyCode === 65) {
+      if (e.keyCode === 65) {
         // a
       }
-      if (event.keyCode === 82) {
+      if (e.keyCode === 82) {
         // r
       }
     }
@@ -255,10 +259,13 @@ class App extends Component {
   }
 
   trigger() {
-    const playing = this.sound.trigger();
-    this.renderer.playing = playing;
+    if (this.sound.playing) {
+      this.sound.pause();
+    } else {
+      this.sound.resume();
+    }
     this.setState({
-      playing,
+      playing: this.sound.playing,
     });
   }
 
@@ -306,6 +313,8 @@ class App extends Component {
     e.stopPropagation();
     if (this.state.waitingNext) {
       this.sound.stop();
+      const tips = document.getElementById('tips');
+      tips.style.display = 'block';
       const result = document.getElementById('resultText');
       result.style.display = 'none';
 
@@ -490,7 +499,6 @@ class App extends Component {
           >
             <img alt="info" src={info} />
           </button>
-
           <div className={styles.tips} id="tips">
             <h3>🙋‍♀️Tips</h3>
             <p>⚡Which one is made by 🤖? Click to listen.<br />

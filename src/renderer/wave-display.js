@@ -40,8 +40,8 @@ export default class WaveDisplay {
   update(w, h) {
     this.gridWidth = w;
     this.gridHeight = h;
-    this.gridYShift = h * this.yShiftRatio * 0.7;
-    this.gridXShift = w * this.xShiftRatio * 0.7;
+    this.gridYShift = h * this.yShiftRatio;
+    this.gridXShift = w * this.xShiftRatio;
   }
 
   draw(ctx, w, h, frameOnly = false) {
@@ -124,6 +124,32 @@ export default class WaveDisplay {
       ctx.arc(0, h, h * 0.02, 0, Math.PI * 2);
       ctx.fill();
 
+      ctx.restore();
+    }
+
+    // hoverPosition
+    if (this.checkSelected() &&
+      this.renderer.hoverPosition > 0 &&
+      this.renderer.hoverPosition < 1 &&
+      this.id === this.renderer.hover &&
+      this.isPlaying()) {
+      ctx.save();
+      ctx.translate(w * this.renderer.hoverPosition, 0);
+      ctx.fillStyle = this.blueColor;
+      ctx.strokeStyle = this.blueColor;
+
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(0, h);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(0, 0, h * 0.02, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(0, h, h * 0.02, 0, Math.PI * 2);
+      ctx.fill();
 
       ctx.restore();
     }
@@ -133,8 +159,7 @@ export default class WaveDisplay {
   }
 
   isPlaying() {
-    // return this.renderer.playing;
-    return true;
+    return this.renderer.app.sound.playing;
   }
 
   checkSelected() {
@@ -159,6 +184,24 @@ export default class WaveDisplay {
     this.newSectionYShift = 1;
   }
 
+  drawIndicator(ctx, w, h) {
+    const { waitingNext, answerCorrect } = this.renderer.app.state;
+
+    const unit = w * 0.08;
+    ctx.save();
+    ctx.translate(0, -(0.55 + 0.02 * Math.sin(this.renderer.frameCount * 0.1)) * h);
+    ctx.fillStyle = this.tronGreenColor;
+    if (waitingNext && !answerCorrect) {
+      ctx.fillStyle = this.redColor;
+    }
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-0.5 * unit, -1 * unit);
+    ctx.lineTo(0.5 * unit, -1 * unit);
+    ctx.fill();
+    ctx.restore();
+  }
+
   drawFrame(ctx, w, h) {
     const ratio = this.dynamic ? 0.08 : 0.06;
     const unit = this.renderer.h * ratio;
@@ -176,7 +219,7 @@ export default class WaveDisplay {
     }
 
 
-
+    const { waitingNext, answerCorrect } = this.renderer.app.state;
     ctx.save();
 
     ctx.strokeStyle = '#FFF';
@@ -185,9 +228,10 @@ export default class WaveDisplay {
       // ctx.strokeStyle = this.purpleColor;
       // ctx.strokeStyle = '#2ecc71';
       // ctx.strokeStyle = this.blueColor;
+
+      this.drawIndicator(ctx, w, h);
     }
 
-    const { waitingNext, answerCorrect } = this.renderer.app.state;
     if (waitingNext) {
       if (this.checkAnswer()) {
         ctx.strokeStyle = this.tronGreenColor;

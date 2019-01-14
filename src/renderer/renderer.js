@@ -31,12 +31,13 @@ export default class Renderer {
 
     // waves
     this.waveDisplay = []
-    this.waveDisplay[0] = new WaveDisplay(this, 0, 0, -1.3);
-    this.waveDisplay[1] = new WaveDisplay(this, 1, 0, 1.3);
+    this.waveDisplay[0] = new WaveDisplay(this, 0, 0, -0.9);
+    this.waveDisplay[1] = new WaveDisplay(this, 1, 0, 0.9);
 
     // new
     this.selected = -1;
     this.hover = -1;
+    this.hoverPosition = 0;
 
     // interpolation display
     this.h_step = 0;
@@ -72,6 +73,7 @@ export default class Renderer {
     const h = w * 0.8;
     this.h = h;
     this.displayWidth = w;
+    this.w = w;
     this.setFontSize(ctx, Math.pow(w / 800, 0.3));
 
     ctx.translate(width * this.widthMidRatio, height * this.heightMidRatio);
@@ -106,6 +108,8 @@ export default class Renderer {
     let ret = -1;
 
     if (Math.abs(y) < this.h * 0.5) {
+      // change position
+
       if (x > 0) {
         ret = 1;
       } else {
@@ -124,6 +128,7 @@ export default class Renderer {
     const x = e.clientX - (this.width * this.widthMidRatio);
     const y = e.clientY - (this.height * this.heightMidRatio);
 
+    // hover
     if (Math.abs(y) < this.h * 0.8) {
       if (x > 0) {
         this.hover = 1;
@@ -132,6 +137,13 @@ export default class Renderer {
       }
     } else {
       this.hover = -1;
+    }
+
+    // adjust
+    if (this.selected === 0) {
+      this.hoverPosition = ((x + this.w * (0.9)) / this.w) + 0.5;
+    } else if (this.selected === 1) {
+      this.hoverPosition = ((x - this.w * (0.9)) / this.w) + 0.5;
     }
   }
 
