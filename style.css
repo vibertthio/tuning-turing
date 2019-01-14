@@ -3,7 +3,7 @@ body {
   margin: 0;
   overflow: hidden; }
 
-.index-module__dimming___1KyFB, .index-module__title____kuSF .index-module__tips___1wmdy, .index-module__title____kuSF .index-module__result___1EuM- {
+.index-module__dimming___1KyFB, .index-module__title____kuSF .index-module__tips___1wmdy, .index-module__title____kuSF .index-module__result___1EuM-, .index-module__control___2am5x .index-module__score___1dji1 .index-module__item___oaqVj .index-module__current___3k5Je {
   -webkit-animation-name: index-module__dim___15b0S;
           animation-name: index-module__dim___15b0S;
   -webkit-animation-duration: 2s;
@@ -103,8 +103,65 @@ body {
   .index-module__control___2am5x .index-module__score___1dji1 {
     font-family: monospace, Arial, sans-serif;
     font-size: 1.2rem;
-    margin: 10px;
-    color: white; }
+    margin: 10px auto;
+    color: white;
+    width: 11rem;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-orient: horizontal;
+    -webkit-box-direction: normal;
+        -ms-flex-direction: row;
+            flex-direction: row;
+    -webkit-box-pack: space-evenly;
+        -ms-flex-pack: space-evenly;
+            justify-content: space-evenly; }
+    .index-module__control___2am5x .index-module__score___1dji1 .index-module__item___oaqVj {
+      -webkit-box-align: center;
+          -ms-flex-align: center;
+              align-items: center;
+      width: 0.6rem;
+      height: 0.6rem; }
+      .index-module__control___2am5x .index-module__score___1dji1 .index-module__item___oaqVj .index-module__breathing___1mCMx {
+        -webkit-animation-name: index-module__breath___2HpeW;
+                animation-name: index-module__breath___2HpeW;
+        -webkit-animation-duration: 2s;
+                animation-duration: 2s;
+        -webkit-animation-iteration-count: infinite;
+                animation-iteration-count: infinite; }
+
+@-webkit-keyframes index-module__breath___2HpeW {
+  0% {
+    width: 0.4rem;
+    height: 0.4rem; }
+  50% {
+    width: 0.6rem;
+    height: 0.6rem; }
+  100% {
+    width: 0.4rem;
+    height: 0.4rem; } }
+
+@keyframes index-module__breath___2HpeW {
+  0% {
+    width: 0.4rem;
+    height: 0.4rem; }
+  50% {
+    width: 0.6rem;
+    height: 0.6rem; }
+  100% {
+    width: 0.4rem;
+    height: 0.4rem; } }
+      .index-module__control___2am5x .index-module__score___1dji1 .index-module__item___oaqVj .index-module__circle___2G3tD, .index-module__control___2am5x .index-module__score___1dji1 .index-module__item___oaqVj .index-module__current___3k5Je, .index-module__control___2am5x .index-module__score___1dji1 .index-module__item___oaqVj .index-module__unfinished___Iznkm, .index-module__control___2am5x .index-module__score___1dji1 .index-module__item___oaqVj .index-module__correct___1Mcy_, .index-module__control___2am5x .index-module__score___1dji1 .index-module__item___oaqVj .index-module__wrong___3foj6 {
+        width: 0.5rem;
+        height: 0.5rem;
+        border-radius: 50%;
+        border: 1.5px solid #3742fa; }
+      .index-module__control___2am5x .index-module__score___1dji1 .index-module__item___oaqVj .index-module__correct___1Mcy_ {
+        border: 1.5px solid #6affb0;
+        background-color: #6affb0; }
+      .index-module__control___2am5x .index-module__score___1dji1 .index-module__item___oaqVj .index-module__wrong___3foj6 {
+        border: 1.5px solid #c0392b;
+        background-color: #c0392b; }
   .index-module__control___2am5x .index-module__slider___1z1XZ {
     display: -webkit-box;
     display: -ms-flexbox;
@@ -187,6 +244,13 @@ body {
   .index-module__overlay___1Tmco .index-module__intro___Ipvau {
     max-width: 450px;
     margin: 0rem auto; }
+    .index-module__overlay___1Tmco .index-module__intro___Ipvau h3 {
+      z-index: 3;
+      font-size: 1.3rem;
+      letter-spacing: 0.12rem;
+      line-height: 1.5rem;
+      font-family: monospace, Arial, sans-serif;
+      color: #ffffff; }
     .index-module__overlay___1Tmco .index-module__intro___Ipvau p {
       z-index: 3;
       font-size: 1.0rem;
