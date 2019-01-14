@@ -1,7 +1,6 @@
 import Tone, { Transport } from 'tone';
 import StartAudioContext from 'startaudiocontext';
 
-import urls from './../utils/m2c_game_audio_path.json';
 import beepSound from './effect/beep.wav';
 import wrongSound from './effect/wrong.wav';
 import correctSound from './effect/correct.wav';
@@ -19,15 +18,22 @@ export default class Sound {
     this.effects[2] = new Tone.Player(correctSound).toMaster();
     this.effects[3] = new Tone.Player(endSound).toMaster();
     this.effects[4] = new Tone.Player(transitionSound).toMaster();
+    this.setVolumes();
 
     this.players = [];
     this.playersPositions = { '0': 0, '1': 0 };
     this.tweens = [];
-    // this.players[0] = new Tone.Player(urls['MTRNNPath'][0], onload).toMaster();
-    // this.players[1] = new Tone.Player(urls['HumanCompose'][0], onload).toMaster();
 
     Transport.bpm.value = 150;
     Transport.start();
+  }
+
+  setVolumes() {
+    this.effects[0].volume.value = -10;
+    this.effects[1].volume.value = -10;
+    this.effects[2].volume.value = -10;
+    this.effects[3].volume.value = -10;
+    this.effects[4].volume.value = -10;
   }
 
   changeBpm(b) {

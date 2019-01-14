@@ -87,7 +87,7 @@ export default class WaveDisplay {
 
 
       if (waitingNext) {
-        if (this.checkSelected()) {
+        if (this.checkAnswer()) {
           ctx.fillStyle = this.tronGreenColor;
         } else {
           ctx.fillStyle = this.redColor;

@@ -4,6 +4,7 @@ $font-default: monospace, Arial, sans-serif;
 $link-color: #3742fa;
 // $link-color: #29f1c3;
 // $link-color: #94EDEE;
+$green-color: #6affb0;
 
 $background-color: rgba(15, 15, 15, 1.0);
 
@@ -153,12 +154,62 @@ $range-label-width: 60px !default;
   bottom: 4rem;
   text-align: center;
   
+  
   .score {
     font-family: $font-default;
     font-size: 1.2rem;
-    margin: 10px;
+    margin: 10px auto;
     color: white;
+
+    width: 11rem;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+
+    .item {
+      align-items: center;
+      width: 0.6rem;
+      height: 0.6rem;
+
+      .breathing {
+        animation-name: breath;
+        animation-duration: 2s;
+        animation-iteration-count: infinite;
+  
+        @keyframes breath {
+          0%   { width: 0.4rem; height: 0.4rem; }
+          50%  { width: 0.6rem; height: 0.6rem; }
+          100% { width: 0.4rem; height: 0.4rem; }
+        }
+      }
+      .circle {
+        width: 0.5rem;
+        height: 0.5rem;
+        border-radius: 50%;      
+        border: 1.5px solid $link-color;
+      }
+      .current {
+        @extend .dimming;
+        @extend .circle;
+      }
+      .unfinished {
+        @extend .circle;
+      }
+      .correct {
+        @extend .circle;
+        // border: 1.5px solid $link-color;
+        // background-color: $link-color;
+        border: 1.5px solid $green-color;
+        background-color: $green-color;
+      }
+      .wrong {
+        @extend .circle;
+        border: 1.5px solid #c0392b;
+        background-color: #c0392b;
+      }
+    }
   }
+
 
 
   .slider {
@@ -262,6 +313,16 @@ $range-label-width: 60px !default;
   .intro {
     max-width: 450px;
     margin: 0rem auto;
+
+    h3 {
+      z-index: 3;
+      font-size: 1.3rem;
+      letter-spacing: 0.12rem;
+      line-height: 1.5rem;
+      font-family: $font-default;
+      color: #ffffff;
+
+    }
 
     p {
       // strong {

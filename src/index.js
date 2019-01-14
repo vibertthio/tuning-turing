@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import Tone from 'tone';
 import { render } from 'react-dom';
 import TWEEN from '@tweenjs/tween.js';
+import uuidv4 from 'uuid/v4';
 
 import styles from './index.module.scss';
 import sig from './assets/sig.png';
@@ -15,6 +16,12 @@ import urls from './utils/m2c_game_audio_path.json';
 class App extends Component {
   constructor(props) {
     super(props);
+    this.nOfQuestion = 5;
+    this.TWEEN = TWEEN;
+    this.ans = 0;
+    this.canvas = [];
+    this.waveforms = [[], []];
+    this.bpms = [];
 
     this.state = {
       open: false, // menu
@@ -37,15 +44,8 @@ class App extends Component {
       },
       score: 0,
       level: 0,
+      history: Array(this.nOfQuestion).fill(-1),
     };
-
-    this.nOfQuestion = 3;
-
-    this.TWEEN = TWEEN;
-    this.ans = 0;
-    this.canvas = [];
-    this.waveforms = [[], []];
-    this.bpms = [];
   }
 
   initSound() {
@@ -71,6 +71,9 @@ class App extends Component {
 
       if (loadingProgress > 0) {
         console.log('finish retrieving.');
+        if (!reset) {
+          this.sound.triggerSoundEffect(4);
+        }
         loadingSongs = false;
         this.setWaveforms();
       }
@@ -322,6 +325,7 @@ class App extends Component {
           waitingNext: false,
           finishedAnswer: false,
           slash: true,
+          history: Array(this.nOfQuestion).fill(-1),
         });
         return;
       }
@@ -339,7 +343,7 @@ class App extends Component {
 
     if (this.state.finishedAnswer) {
 
-      const { level } = this.state;
+      const { level, history } = this.state;
       console.log('send the answer');
       this.sound.stop();
 
@@ -354,8 +358,10 @@ class App extends Component {
 
       if (correct) {
         this.sound.triggerSoundEffect(2);
+        history[level] = 2;
       } else {
         this.sound.triggerSoundEffect(1);
+        history[level] = 1;
       }
 
       this.setState({
@@ -363,6 +369,7 @@ class App extends Component {
         waitingNext: true,
         answerCorrect: correct,
         score,
+        history,
       });
 
       return;
@@ -370,7 +377,7 @@ class App extends Component {
   }
 
   render() {
-    const { level, waitingNext, loadingSongs, finishedAnswer, answerCorrect, score } = this.state;
+    const { level, waitingNext, loadingSongs, finishedAnswer, answerCorrect, score, history } = this.state;
     const loadingText = loadingSongs ? 'loading...' : 'play';
     let buttonText = finishedAnswer ? 'send' : 'choosing...';
 
@@ -393,12 +400,11 @@ class App extends Component {
 
     const arr = Array.from(Array(9).keys());
     const mat = Array.from(Array(9 * 16).keys());
-    const { rhythmThreshold, bpm } = this.state;
     return (
       <div>
         <section className={styles.splash} id="splash">
           <div className={styles.wrapper}>
-            <h1>Tuning<br/>Turing</h1>
+            <h1>Tuning Turing</h1>
             <h2>
               = 👩‍🎨 Turing Test + 🤖 Harmanization
             </h2>
@@ -466,14 +472,14 @@ class App extends Component {
             </a>
           </div>
           <div className={styles.privacy}>
-            <a href="https://github.com/vibertthio/sornting" target="_blank">Privacy &amp; </a>
-            <a href="https://github.com/vibertthio/sornting" target="_blank">Terms</a>
+            <a href="https://github.com/vibertthio/tuning-turing" target="_blank">Privacy &amp; </a>
+            <a href="https://github.com/vibertthio/tuning-turing" target="_blank">Terms</a>
           </div>
         </section>
 
         <div className={styles.title}>
           <div className={styles.link}>
-            <a href="https://github.com/vibertthio/sornting" target="_blank" rel="noreferrer noopener">
+            <a href="https://github.com/vibertthio/tuning-turing" target="_blank" rel="noreferrer noopener">
               Tuning Turing
             </a>
           </div>
@@ -511,17 +517,49 @@ class App extends Component {
               {buttonText}
             </button>
           </div>
-          <div className={styles.score}>
+          {/* <div className={styles.score}>
             <p>{bottomScoreText}</p>
+          </div> */}
+          <div className={styles.score}>
+            {history.map((value, i) => {
+              if (value === 1) {
+                return (
+                  <div key={uuidv4()} className={styles.item}>
+                    <div className={styles.wrong} />
+                  </div>
+                );
+              } else if (value === 2) {
+                return (
+                  <div key={uuidv4()} className={styles.item}>
+                    <div className={styles.correct} />
+                  </div>
+                );
+              } else if (i === level && !waitingNext) {
+                return (
+                  <div key={uuidv4()} className={styles.item}>
+                    <div className={styles.current} />
+                  </div>
+                );
+              } else if (value === -1) {
+                return (
+                  <div key={uuidv4()} className={styles.item}>
+                    <div className={styles.unfinished} />
+                  </div>
+                );
+              }
+            })}
           </div>
         </div>
         <div id="menu" className={styles.overlay}>
           <button className={styles.overlayBtn} onClick={() => this.handleClickMenu()} />
           <div className={styles.intro}>
+            <h3>$ Tuning Turing $</h3>
             <p>
-              <strong>$ 🎸Sornting $</strong>
-              <br />= Sort + Song
-              <br />A game based on a musical machine learning algorithm which can interpolate different melodies. Made by{' '}
+              {/* <strong>$ Tuning Turing $</strong> */}
+              = 👩‍🎨 Turing Test + 🤖 Harmanization
+              <br />
+                A game based on a musical machine learning algorithm which can harmanize the given melodies.
+                The player has to choose the one generated by the algorithm. Made by Dean and {' '}
               <a href="https://vibertthio.com/portfolio/" target="_blank" rel="noreferrer noopener">
                 Vibert Thio
               </a>.{' Source code is on '}
@@ -533,11 +571,10 @@ class App extends Component {
                 GitHub.
               </a>
             </p>
+            <h3>$ How to use $</h3>
             <p>
-              <strong>$ How to use $</strong> <br />
-              ⚡Drag the <font color="#2ecc71">melodies below</font> <br />
-              into the <font color="#f39c12">golden box</font> above <br />
-              to complete the interpolation.
+              ⚡Which one is made by 🤖? Click to listen.
+              👇Press the SEND button to check the answer
             </p>
           </div>
           <button className={styles.overlayBtn} onClick={() => this.handleClickMenu()} />
